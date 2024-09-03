@@ -18,7 +18,10 @@
     "next": "14.2.5",
     "next-auth": "^4.24.7",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-sortable": "^2.0.0",
+    "react-sortablejs": "^6.1.4",
+    "react-spinners": "^0.14.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",

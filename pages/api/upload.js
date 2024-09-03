@@ -1,19 +1,48 @@
 import multiparty from 'multiparty';
-import { S3Client } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import fs from 'fs';
+import mime from 'mime-types';
+
+const bucketName = "dhrumil-next-ecommerce-bucket";
 
 export default async function handle(req, res) {
-    const client = new S3Client({region: 'us-east-1'});
     const form = new multiparty.Form();  // Corrected initialization
     const { fields, files } = await new Promise((resolve, reject) => {
         form.parse(req, (err, fields, files) => {
-            if (err) reject(err);
+            if (err) {
+                reject(err);
+                return;
+            };
             resolve({ fields, files });  // Corrected this line
         });
     });
-    res.json({ fields, files });
-    console.log(files);
+    const client = new S3Client({
+        region: 'us-east-1',
+        credentials: {
+            accessKeyId: process.env.S3_ACCESS_KEY,
+            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+        }
+    });
+
+    const links = [];
+    for (const file of files.file) {
+        const ext = file.originalFilename.split('.').pop();
+        const newFileName = Date.now() + "." + ext;
+        await client.send(new PutObjectCommand({
+            Bucket: bucketName,
+            Key: newFileName,
+            Body: fs.readFileSync(file.path),
+            ACL: 'public-read',
+            ContentType: mime.lookup(file.path),
+
+        }));
+        const link = `https://${bucketName}.s3.amazonaws.com/${newFileName}`;
+        links.push(link); 
+    }
+    res.json({links});
 }
 
+// The body parser:false allows you to 
 export const config = {
     api: { bodyParser: false }
 };
